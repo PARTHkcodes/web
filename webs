@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Space Adventure Portal</title>
+<style>
+  * { box-sizing: border-box; }
+  body, html {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: white;
+    background-color: #0e1321;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    background-image: url('https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=1470&q=80');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+  #starsCanvas {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: -1; background: #0e1321; display: block;
+  }
+  .main-heading {
+    margin-top: 5rem; text-align: center;
+  }
+  .main-heading h1 {
+    font-size: 4rem; font-weight: 800; margin: 0.5rem 0 0.2rem 0; color: #ffffff; text-shadow: 0 0 15px rgba(0,0,0,0.9);
+  }
+  .main-heading h2 {
+    font-size: 2rem; font-weight: 600; margin: 0.3rem 0 1.5rem 0; color: #e0e7ff; text-shadow: 0 0 12px rgba(0,0,0,0.8);
+  }
+  .main-heading .second-big {
+    font-size: 3.5rem; font-weight: 800; margin-bottom: 2rem; color: #a5b4fc; text-shadow: 0 0 15px rgba(29,78,216,0.8);
+  }
+  .overlay {
+    max-width: 800px; margin: 0 auto 3rem; padding: 0 2rem; border-radius: 12px; text-align: center;
+  }
+  .buttons {
+    display: flex; justify-content: center; gap: 3rem;
+  }
+  .btn-watch {
+    background: transparent; border: 3px solid #ff4500; border-radius: 45px; padding: 1.25rem 3.75rem;
+    font-size: 1.4rem; font-weight: 700; color: #ff4500; cursor: pointer; transition: all 0.4s ease;
+  }
+  .btn-watch:hover, .btn-watch:focus {
+    background: #ff4500; color: white; box-shadow: 0 0 25px #ff6347; transform: scale(1.1); outline: none;
+  }
+  .btn-play {
+    background: #90ee90; border: none; border-radius: 40px; padding: 1.15rem 3rem; font-size: 1.4rem;
+    font-weight: 700; color: #006400; cursor: pointer; box-shadow: 0 5px 8px rgba(0, 100, 0, 0.35);
+    transition: box-shadow 0.35s ease, transform 0.35s ease;
+  }
+  .btn-play:hover, .btn-play:focus {
+    box-shadow: 0 8px 15px rgba(0, 100, 0, 0.7);
+    animation: bounce 0.5s ease forwards;
+    outline: none;
+  }
+  @keyframes bounce {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15) translateY(-10px); }
+    100% { transform: scale(1) translateY(0); }
+  }
+  img#world-map-img {
+    max-width: 900px;
+    margin: 2rem auto;
+    display: block;
+    border-radius: 14px;
+    box-shadow: 0 6px 28px rgba(41, 121, 255, 0.5);
+    user-select: none;
+  }
+  section {
+    max-width: 900px; margin: 4rem auto 3rem; padding: 2rem 1.5rem;
+    background: rgba(10, 18, 35, 0.85); border-radius: 14px; box-shadow: 0 8px 32px rgba(10, 18, 35, 0.85);
+  }
+  section h2 {
+    margin-top: 0; font-size: 2.5rem; margin-bottom: 1rem; border-bottom: 3px solid #4889f6;
+    padding-bottom: 0.3rem; color: #82b1ff;
+  }
+  section p {
+    font-size: 1.15rem; line-height: 1.6; color: #d4deff;
+  }
+  .modal, .options-modal {
+    display: none; position: fixed; z-index: 100; left: 0; top: 0;
+    width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.8);
+    justify-content: center; align-items: center; flex-direction: column;
+  }
+  .modal-content, .options-content {
+    position: relative; width: 90%; max-width: 480px; background: black;
+    border-radius: 12px; overflow: hidden; padding: 20px; box-sizing: border-box;
+  }
+  .modal-content iframe {
+    width: 100%; height: 270px; border: none;
+  }
+  .options-content button {
+    width: 100%; margin: 10px 0; padding: 1rem; font-size: 1.2rem; border-radius: 12px;
+    border: none; cursor: pointer; font-weight: 700;
+  }
+  .modal-close, .modal-stop {
+    font-size: 1.6rem; font-weight: bold; color: white; cursor: pointer;
+    border: none; padding: 0.5rem 1rem; margin: 1rem 0 0.75rem 0;
+    border-radius: 30px; background-color: #ff4444;
+    box-shadow: 0 3px 12px rgba(255, 68, 68, 0.6);
+  }
+  .modal-close:hover, .modal-stop:hover {
+    background-color: #cc2222;
+  }
+  @media(max-width: 480px) {
+    .modal-content, .options-content {
+      max-width: 100%;
+      padding: 10px;
+    }
+    .modal-content iframe {
+      height: 190px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="starsCanvas"></canvas>
+
+<div class="main-heading">
+  <h1>Stellar Stories:</h1>
+  <h2>Space Weather Through the Eyes of Earthlings</h2>
+  <div class="second-big">The Day When WiFi Stopped</div>
+</div>
+
+<div class="overlay">
+  <div class="buttons">
+    <button type="button" class="btn-watch" id="watchStoryBtn">Watch Story</button>
+    <button type="button" class="btn-play" id="playGameBtn">Play Game</button>
+  </div>
+</div>
+
+<img id="world-map-img" src="world-map.jpg" alt="Map of the World" />
+
+<section id="summary-section" tabindex="0" aria-label="Summary of space weather story">
+  <h2>Summary</h2>
+  <p>
+    Although the Sun is 93 million miles away from our planet, solar activity can significantly impact our daily lives.
+    “Space weather”—the variations that occur in the space environment between the Sun and Earth—can impact technologies
+    in space and on Earth. Your challenge is to write and illustrate a digital children’s story that explains what space
+    weather is and the varying impacts it has on different people such as farmers, pilots, astronauts, power grid
+    operators, and the general public. You can tell the story from the perspective of a person impacted by space weather
+    or from the point of view of a solar flare or coronal mass ejection (CME) as it approaches Earth.
+  </p>
+</section>
+
+<section id="objectives-section" tabindex="0" aria-label="Objectives for space weather story challenge">
+  <h2>Objectives</h2>
+  <p>
+    Space weather is the changing environment in space caused by the Sun. It affects Earth and people in various ways, such as disrupting GPS for farmers, affecting pilots' communications, and impacting power grids. The story challenge invites creating a children’s digital tale explaining space weather’s effects, told from either a person’s view (like an astronaut or farmer) or from a solar flare’s perspective. The goal is to make the complex science easy and fun to understand with creative storytelling and illustrations.
+  </p>
+</section>
+
+<!-- Video Options Modal (Farmer video removed) -->
+<div class="options-modal" id="videoOptionsModal" role="dialog" aria-modal="true" tabindex="-1">
+  <div class="options-content">
+    <button id="studentVideoBtn" class="btn">Play Student Video</button>
+    <button id="earthVideoBtn" class="btn">Play Video of Earth</button>
+    <button class="modal-close" id="optionsModalClose" aria-label="Close modal">&times;</button>
+  </div>
+</div>
+
+<!-- Video Player Modal -->
+<div class="modal" id="videoModal" role="dialog" aria-modal="true" tabindex="-1">
+  <div class="modal-content">
+    <iframe id="youtubeVideo" src="" allow="autoplay; encrypted-media" allowfullscreen title="Video Player"></iframe>
+    <button class="modal-stop" id="modalStop" aria-label="Stop video playback">Stop Video</button>
+    <button class="modal-close" id="modalClose" aria-label="Close modal">&times;</button>
+  </div>
+</div>
+
+<script>
+  // Starry background animation
+  const canvas = document.getElementById('starsCanvas');
+  const ctx = canvas.getContext('2d');
+  let width, height;
+  let stars = [];
+
+  function setupCanvas() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+    stars = [];
+    for (let i = 0; i < 300; i++) {
+      stars.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        radius: Math.random() * 1.1,
+        alpha: Math.random()
+      });
+    }
+  }
+
+  function animateStars() {
+    ctx.clearRect(0, 0, width, height);
+    stars.forEach(star => {
+      star.alpha += (Math.random() - 0.5) * 0.05;
+      star.alpha = Math.min(Math.max(star.alpha, 0.1), 1);
+      ctx.beginPath();
+      ctx.arc(star.x, star.y, star.radius, 0, 2 * Math.PI);
+      ctx.fillStyle = rgba(255, 255, 255, ${star.alpha});
+      ctx.fill();
+    });
+    requestAnimationFrame(animateStars);
+  }
+
+  setupCanvas();
+  animateStars();
+  window.addEventListener('resize', () => {
+    setupCanvas();
+  });
+
+  // Video modals and buttons
+  const watchBtn = document.getElementById('watchStoryBtn');
+  const videoOptionsModal = document.getElementById('videoOptionsModal');
+  const videoModal = document.getElementById('videoModal');
+  const optionsModalClose = document.getElementById('optionsModalClose');
+  const closeBtn = document.getElementById('modalClose');
+  const stopBtn = document.getElementById('modalStop');
+  const iframe = document.getElementById('youtubeVideo');
+  const studentBtn = document.getElementById('studentVideoBtn');
+  const earthBtn = document.getElementById('earthVideoBtn');
+
+  watchBtn.addEventListener('click', () => {
+    videoOptionsModal.style.display = 'flex';
+  });
+
+  optionsModalClose.addEventListener('click', () => {
+    videoOptionsModal.style.display = 'none';
+  });
+
+  studentBtn.addEventListener('click', () => {
+    playVideo('https://www.youtube.com/embed/gPXb3wgztR8?si=gjGPSfGvpG9if6Kw&autoplay=1');
+  });
+
+  earthBtn.addEventListener('click', () => {
+    playVideo('https://www.youtube.com/embed/boVwJ_jWPGg?si=vCMfOpSMtJfTuia2&autoplay=1');
+  });
+
+  function playVideo(url) {
+    videoOptionsModal.style.display = 'none';
+    iframe.src = url;
+    videoModal.style.display = 'flex';
+  }
+
+  closeBtn.addEventListener('click', () => {
+    videoModal.style.display = 'none';
+    iframe.src = '';
+  });
+
+  stopBtn.addEventListener('click', () => {
+    iframe.src = '';
+  });
+
+  window.addEventListener('click', (e) => {
+    if (e.target === videoModal) {
+      videoModal.style.display = 'none';
+      iframe.src = '';
+    } else if (e.target === videoOptionsModal) {
+      videoOptionsModal.style.display = 'none';
+    }
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if ((e.key === 'Escape' && videoModal.style.display === 'flex') ||
+        (e.key === 'Escape' && videoOptionsModal.style.display === 'flex')) {
+      if (videoModal.style.display === 'flex') {
+        videoModal.style.display = 'none';
+        iframe.src = '';
+      }
+      if (videoOptionsModal.style.display === 'flex') {
+        videoOptionsModal.style.display = 'none';
+      }
+    }
+  });
+</script>
+
+</body>
+</html>
